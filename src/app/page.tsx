@@ -26,37 +26,48 @@ export default async function Home({ searchParams }: HomeProps) {
     ? { likes: { _count: 'desc' as const } }
     : { createdAt: 'desc' as const }
 
-  const [articles, total] = await Promise.all([
-    prisma.article.findMany({
-      where,
-      orderBy,
-      skip: (page - 1) * limit,
-      take: limit,
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        excerpt: true,
-        createdAt: true,
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-            handle: true,
-            verified: true,
+  let articles: any[] = []
+  let total = 0
+  
+  try {
+    const result = await Promise.all([
+      prisma.article.findMany({
+        where,
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          excerpt: true,
+          createdAt: true,
+          author: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+              handle: true,
+              verified: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
           },
         },
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
-          },
-        },
-      },
-    }),
-    prisma.article.count({ where }),
-  ])
+      }),
+      prisma.article.count({ where }),
+    ])
+    articles = result[0]
+    total = result[1]
+  } catch (error) {
+    console.error('Database error:', error)
+    articles = []
+    total = 0
+  }
 
   const totalPages = Math.ceil(total / limit)
 
