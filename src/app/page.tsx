@@ -1,6 +1,8 @@
+'use client'
+
 import Link from 'next/link'
 
-export default async function Home() {
+export default function Home() {
   // صفحة ترحيب بسيطة بدون جلب بيانات
 
   return (
