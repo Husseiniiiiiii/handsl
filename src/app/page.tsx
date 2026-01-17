@@ -1,75 +1,7 @@
-import { prisma } from '@/lib/prisma'
-import { ArticleCard } from '@/components/ArticleCard'
-import { SearchAndSort } from '@/components/SearchAndSort'
+import Link from 'next/link'
 
-interface HomeProps {
-  searchParams: { search?: string; sort?: string; page?: string }
-}
-
-export default async function Home({ searchParams }: HomeProps) {
-  const search = searchParams.search || ''
-  const sort = searchParams.sort || 'latest'
-  const page = parseInt(searchParams.page || '1')
-  const limit = 10
-
-  const where = {
-    published: true,
-    ...(search && {
-      OR: [
-        { title: { contains: search } },
-        { content: { contains: search } },
-      ],
-    }),
-  }
-
-  const orderBy = sort === 'popular'
-    ? { likes: { _count: 'desc' as const } }
-    : { createdAt: 'desc' as const }
-
-  let articles: any[] = []
-  let total = 0
-  
-  try {
-    const result = await Promise.all([
-      prisma.article.findMany({
-        where,
-        orderBy,
-        skip: (page - 1) * limit,
-        take: limit,
-        select: {
-          id: true,
-          title: true,
-          content: true,
-          excerpt: true,
-          createdAt: true,
-          author: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-              handle: true,
-              verified: true,
-            },
-          },
-          _count: {
-            select: {
-              likes: true,
-              comments: true,
-            },
-          },
-        },
-      }),
-      prisma.article.count({ where }),
-    ])
-    articles = result[0]
-    total = result[1]
-  } catch (error) {
-    console.error('Database error:', error)
-    articles = []
-    total = 0
-  }
-
-  const totalPages = Math.ceil(total / limit)
+export default async function Home() {
+  // صفحة ترحيب بسيطة بدون جلب بيانات
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -82,41 +14,62 @@ export default async function Home({ searchParams }: HomeProps) {
         </p>
       </div>
 
-      <SearchAndSort currentSearch={search} currentSort={sort} />
-
-      {articles.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-gray-500 text-lg">
-            {search ? 'لا توجد نتائج للبحث' : 'لا توجد مقالات بعد'}
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-6">
-            {articles.map((article) => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
+      <div className="text-center py-16">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            ابدأ رحلتك مع هاسنديل
+          </h2>
+          
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="text-4xl mb-4">✍️</div>
+              <h3 className="text-lg font-semibold mb-2">اكتب مقالات</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                شارك أفكارك وآرائك مع العالم
+              </p>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="text-4xl mb-4">❤️</div>
+              <h3 className="text-lg font-semibold mb-2">تفاعل مع الآخرين</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                أعجب بالمقالات وعلّق عليها
+              </p>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="text-4xl mb-4">👥</div>
+              <h3 className="text-lg font-semibold mb-2">تابع الكتّاب</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                تواصل مع المبدعين والمثقفين
+              </p>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="text-4xl mb-4">🔍</div>
+              <h3 className="text-lg font-semibold mb-2">اكتشف محتوى</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                ابحث عن مقالات ومستخدمين
+              </p>
+            </div>
           </div>
 
-          {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-8">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <a
-                  key={p}
-                  href={`/?search=${search}&sort=${sort}&page=${p}`}
-                  className={`px-4 py-2 rounded-lg ${
-                    p === page
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {p}
-                </a>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/auth/register"
+              className="btn-primary"
+            >
+              إنشاء حساب
+            </Link>
+            <Link
+              href="/auth/login"
+              className="btn-secondary"
+            >
+              تسجيل الدخول
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
